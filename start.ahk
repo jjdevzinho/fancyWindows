@@ -12,6 +12,7 @@ A_TrayMenu.Add("Sair", ExitScript)
 ; Estados dos scripts (carregados do arquivo INI)
 global settings := Map()
 settings["focusBorder"] := true
+settings["focusHighlight"] := false  ; Novo módulo iniciando desativado
 settings["focusZone"] := true
 settings["sameZone"] := true
 settings["sameApp"] := true
@@ -25,6 +26,7 @@ LoadSettings()
 
 ; Carrega todos os módulos (necessário devido às limitações do AutoHotkey)
 #Include globalFocusBorder.ahk
+#Include globalFocusHighlight.ahk
 #Include focusZone.ahk
 #Include toggleWindowSameZone.ahk
 #Include toggleWindowSameApp.ahk
@@ -147,6 +149,15 @@ ApplyHotkeySettings() {
             SetTimer(CheckFocusChange, 0)
         }
     }
+
+    ; Gerencia highlight de foco
+    try {
+        if (settings["focusHighlight"]) {
+            SetTimer(CheckFocusChangeFlash, 100)
+        } else {
+            SetTimer(CheckFocusChangeFlash, 0)
+        }
+    }
 }
 
 ShowSettings(*) {
@@ -164,43 +175,47 @@ ShowSettings(*) {
     cb1 := myGui.Add("Checkbox", "x20 y50", "Borda de Foco")
     cb1.Value := settings["focusBorder"]
 
-    cb2 := myGui.Add("Checkbox", "x20 y75", "Navegação por Zona")
-    cb2.Value := settings["focusZone"]
+    cb2 := myGui.Add("Checkbox", "x20 y75", "Highlight de Foco")
+    cb2.Value := settings["focusHighlight"]
 
-    cb3 := myGui.Add("Checkbox", "x20 y100", "Alternar Mesma Zona")
-    cb3.Value := settings["sameZone"]
+    cb3 := myGui.Add("Checkbox", "x20 y100", "Navegação por Zona")
+    cb3.Value := settings["focusZone"]
 
-    cb4 := myGui.Add("Checkbox", "x20 y125", "Alternar Mesmo App")
-    cb4.Value := settings["sameApp"]
+    cb4 := myGui.Add("Checkbox", "x20 y125", "Alternar Mesma Zona")
+    cb4.Value := settings["sameZone"]
 
-    cb5 := myGui.Add("Checkbox", "x20 y150", "Maximizar/Restaurar")
-    cb5.Value := settings["maxRestore"]
+    cb5 := myGui.Add("Checkbox", "x20 y150", "Alternar Mesmo App")
+    cb5.Value := settings["sameApp"]
 
-    cb6 := myGui.Add("Checkbox", "x20 y175", "Maximizar/Minimizar")
-    cb6.Value := settings["maxMin"]
+    cb6 := myGui.Add("Checkbox", "x20 y175", "Maximizar/Restaurar")
+    cb6.Value := settings["maxRestore"]
 
-    cb7 := myGui.Add("Checkbox", "x20 y200", "Fechar Janela")
-    cb7.Value := settings["closeWin"]
+    cb7 := myGui.Add("Checkbox", "x20 y200", "Maximizar/Minimizar")
+    cb7.Value := settings["maxMin"]
 
-    cb8 := myGui.Add("Checkbox", "x20 y225", "Centralizar Janela")
-    cb8.Value := settings["centerWin"]
+    cb8 := myGui.Add("Checkbox", "x20 y225", "Fechar Janela")
+    cb8.Value := settings["closeWin"]
+
+    cb9 := myGui.Add("Checkbox", "x20 y250", "Centralizar Janela")
+    cb9.Value := settings["centerWin"]
 
     ; Botões
-    btnApply := myGui.Add("Button", "x20 y260 w80", "Aplicar")
-    btnCancel := myGui.Add("Button", "x110 y260 w80", "Cancelar")
-    btnReload := myGui.Add("Button", "x200 y260 w80", "Recarregar")
+    btnApply := myGui.Add("Button", "x20 y310 w80", "Aplicar")
+    btnCancel := myGui.Add("Button", "x110 y310 w80", "Cancelar")
+    btnReload := myGui.Add("Button", "x200 y310 w80", "Recarregar")
 
     ; Função para aplicar configurações
     ApplySettings(*) {
         ; Salva todas as configurações dos checkboxes
         settings["focusBorder"] := cb1.Value
-        settings["focusZone"] := cb2.Value
-        settings["sameZone"] := cb3.Value
-        settings["sameApp"] := cb4.Value
-        settings["maxRestore"] := cb5.Value
-        settings["maxMin"] := cb6.Value
-        settings["closeWin"] := cb7.Value
-        settings["centerWin"] := cb8.Value
+        settings["focusHighlight"] := cb2.Value
+        settings["focusZone"] := cb3.Value
+        settings["sameZone"] := cb4.Value
+        settings["sameApp"] := cb5.Value
+        settings["maxRestore"] := cb6.Value
+        settings["maxMin"] := cb7.Value
+        settings["closeWin"] := cb8.Value
+        settings["centerWin"] := cb9.Value
 
         SaveSettings()
         myGui.Destroy()
@@ -224,7 +239,7 @@ ShowSettings(*) {
     btnReload.OnEvent("Click", ReloadFromGUI)
 
     ; Mostra a GUI
-    myGui.Show("w320 h300")
+    myGui.Show("w320 h350")
 }
 
 ReloadScript(*) {
