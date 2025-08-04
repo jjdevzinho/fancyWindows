@@ -5,15 +5,16 @@
 global borderGuis := []  ; Array para múltiplas bordas
 global borderTimer := ""
 global lastActiveWindow := 0
-global borderColor := GetWindowsAccentColor()  ; Cor de destaque do Windows
+global borderColor := GetWindowsAccentColorFixed()  ; Cor de destaque do Windows
 global borderThickness := 2       ; Espessura da borda em pixels - mais fino
 global currentBorderWindow := 0    ; Janela que tem borda ativa no momento
+global isDraggingWindow := false   ; Flag para detectar quando está movendo janela
 
 ; Verifica mudanças de foco a cada 100ms
-SetTimer(CheckFocusChange, 100)
+SetTimer(CheckFocusChangeFixed, 100)
 
 ; Função para obter a cor de destaque do Windows
-GetWindowsAccentColor() {
+GetWindowsAccentColorFixed() {
     try {
         ; Lê a cor de destaque do registro do Windows
         accentColor := RegRead("HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\DWM", "AccentColor")
@@ -32,19 +33,69 @@ GetWindowsAccentColor() {
     }
 }
 
-CheckFocusChange() {
+CheckFocusChangeFixed() {
+    global lastActiveWindow, borderColor, currentBorderWindow, isDraggingWindow
+
+    ; Verifica se Alt ou Win estão pressionados (indicando possível drag)
+    if (GetKeyState("Alt", "P") || GetKeyState("LWin", "P") || GetKeyState("RWin", "P")) {
+        isDraggingWindow := true
+        return  ; Não faz nada enquanto está arrastando
+    } else if (isDraggingWindow) {
+        ; Se acabou de parar de arrastar, aguarda um pouco antes de reativar
+        isDraggingWindow := false
+        SetTimer(() => ProcessFocusChange(), -200)  ; Aguarda 200ms antes de processar
+        return
+    }
+
+    ProcessFocusChange()
+}
+
+; Função separada para processar mudanças de foco
+ProcessFocusChange() {
     global lastActiveWindow, borderColor, currentBorderWindow
 
     currentWindow := WinExist("A")
 
+    ; Verifica se a janela que tem borda ainda existe e está visível
+    if (currentBorderWindow != 0) {
+        try {
+            ; Tenta verificar se a janela ainda existe e está visível
+            if (!WinExist("ahk_id " currentBorderWindow) || !WinActive("ahk_id " currentBorderWindow)) {
+                ; Se a janela não existe mais ou não está ativa, remove a borda
+                if (currentWindow == 0 || !IsNormalWindowFixed(currentWindow)) {
+                    RemoveBorderFixed()
+                    lastActiveWindow := 0
+                    return
+                }
+            } else {
+                ; Se a janela ainda existe mas mudou de posição, atualiza a borda
+                try {
+                    WinGetPos(&newX, &newY, &newW, &newH, "ahk_id " currentBorderWindow)
+                    ; Se a posição mudou significativamente, reaplica a borda
+                    static lastX := 0, lastY := 0
+                    if (Abs(newX - lastX) > 10 || Abs(newY - lastY) > 10) {
+                        ApplyPermanentBorder(currentBorderWindow)
+                        lastX := newX
+                        lastY := newY
+                    }
+                }
+            }
+        } catch {
+            ; Se der erro ao verificar a janela, assume que foi fechada
+            RemoveBorderFixed()
+            lastActiveWindow := 0
+            return
+        }
+    }
+
     ; Se mudou de janela E é uma janela "normal"
-    if (currentWindow != lastActiveWindow && currentWindow != 0 && IsNormalWindow(currentWindow)) {
+    if (currentWindow != lastActiveWindow && currentWindow != 0 && IsNormalWindowFixed(currentWindow)) {
         ; Atualiza a cor de destaque (caso o usuário tenha mudado o tema)
-        borderColor := GetWindowsAccentColor()
+        borderColor := GetWindowsAccentColorFixed()
 
         ; Remove borda da janela anterior (se existir)
         if (currentBorderWindow != 0 && currentBorderWindow != currentWindow) {
-            RemoveBorder()
+            RemoveBorderFixed()
         }
 
         ; Aplica borda permanente na nova janela ativa
@@ -52,10 +103,17 @@ CheckFocusChange() {
         lastActiveWindow := currentWindow
         currentBorderWindow := currentWindow
     }
+    ; Se não há janela ativa válida, remove a borda
+    else if (currentWindow == 0 || !IsNormalWindowFixed(currentWindow)) {
+        if (currentBorderWindow != 0) {
+            RemoveBorderFixed()
+            lastActiveWindow := 0
+        }
+    }
 }
 
 ; Função para verificar se é uma janela "comum" (não do sistema)
-IsNormalWindow(window) {
+IsNormalWindowFixed(window) {
     try {
         ; Obtém informações da janela
         windowTitle := WinGetTitle(window)
@@ -130,7 +188,7 @@ ApplyPermanentBorder(window) {
     global borderGuis, borderTimer, borderColor, borderThickness
 
     ; Remove bordas anteriores se existirem
-    RemoveBorder()
+    RemoveBorderFixed()
 
     ; Cria a borda permanente ao redor da janela
     try {
@@ -213,7 +271,7 @@ ApplyPermanentBorder(window) {
     }
 }
 
-RemoveBorder() {
+RemoveBorderFixed() {
     global borderGuis, borderTimer, currentBorderWindow
 
     ; Remove todas as bordas

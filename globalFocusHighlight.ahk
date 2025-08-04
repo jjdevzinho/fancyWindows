@@ -5,25 +5,48 @@
 global highlightGui := ""
 global highlightTimer := ""
 global lastActiveWindow := 0
+global isDraggingWindow := false   ; Flag para detectar quando está movendo janela
 
 ; Verifica mudanças de foco a cada 100ms
-SetTimer(CheckFocusChange, 100)
+SetTimer(CheckFocusChangeFlash, 100)
 
-CheckFocusChange() {
+CheckFocusChangeFlash() {
+    global lastActiveWindow, isDraggingWindow
+
+    ; Verifica se Alt ou Win estão pressionados (indicando possível drag)
+    if (GetKeyState("Alt", "P") || GetKeyState("LWin", "P") || GetKeyState("RWin", "P")) {
+        isDraggingWindow := true
+        return  ; Não faz nada enquanto está arrastando
+    } else if (isDraggingWindow) {
+        ; Se acabou de parar de arrastar, aguarda um pouco antes de reativar
+        isDraggingWindow := false
+        SetTimer(() => ProcessFocusChangeFlash(), -100)  ; Aguarda 100ms antes de processar
+        return
+    }
+
+    ProcessFocusChangeFlash()
+}
+
+; Função separada para processar mudanças de foco
+ProcessFocusChangeFlash() {
     global lastActiveWindow
 
     currentWindow := WinExist("A")
 
     ; Se mudou de janela E é uma janela "normal"
-    if (currentWindow != lastActiveWindow && currentWindow != 0 && IsNormalWindow(currentWindow)) {
+    if (currentWindow != lastActiveWindow && currentWindow != 0 && IsNormalWindowFlash(currentWindow)) {
         ; Aplica o efeito de piscar
         ApplyFlashEffect(currentWindow)
         lastActiveWindow := currentWindow
     }
+    ; Se não há janela ativa válida, limpa a última janela registrada
+    else if (currentWindow == 0 || (currentWindow != 0 && !IsNormalWindowFlash(currentWindow))) {
+        lastActiveWindow := 0
+    }
 }
 
 ; Função para verificar se é uma janela "comum" (não do sistema)
-IsNormalWindow(window) {
+IsNormalWindowFlash(window) {
     try {
         ; Obtém informações da janela
         windowTitle := WinGetTitle(window)

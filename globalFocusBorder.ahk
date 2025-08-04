@@ -7,6 +7,7 @@ global borderTimer := ""
 global lastActiveWindow := 0
 global borderColor := GetWindowsAccentColor()  ; Cor de destaque do Windows
 global borderThickness := 2       ; Espessura da borda em pixels - mais fino
+global isDraggingWindow := false   ; Flag para detectar quando está movendo janela
 
 ; Verifica mudanças de foco a cada 25ms
 SetTimer(CheckFocusChange, 25)
@@ -32,6 +33,24 @@ GetWindowsAccentColor() {
 }
 
 CheckFocusChange() {
+    global lastActiveWindow, borderColor, isDraggingWindow
+
+    ; Verifica se Alt ou Win estão pressionados (indicando possível drag)
+    if (GetKeyState("Alt", "P") || GetKeyState("LWin", "P") || GetKeyState("RWin", "P")) {
+        isDraggingWindow := true
+        return  ; Não faz nada enquanto está arrastando
+    } else if (isDraggingWindow) {
+        ; Se acabou de parar de arrastar, aguarda um pouco antes de reativar
+        isDraggingWindow := false
+        SetTimer(() => ProcessFocusChangeNormal(), -150)  ; Aguarda 150ms antes de processar
+        return
+    }
+
+    ProcessFocusChangeNormal()
+}
+
+; Função separada para processar mudanças de foco
+ProcessFocusChangeNormal() {
     global lastActiveWindow, borderColor
 
     currentWindow := WinExist("A")
@@ -44,6 +63,11 @@ CheckFocusChange() {
         ; Aplica o efeito de borda
         ApplyBorderEffect(currentWindow)
         lastActiveWindow := currentWindow
+    }
+    ; Se não há janela ativa válida, remove qualquer borda restante
+    else if (currentWindow == 0 || (currentWindow != 0 && !IsNormalWindow(currentWindow))) {
+        RemoveBorder()
+        lastActiveWindow := 0
     }
 }
 
