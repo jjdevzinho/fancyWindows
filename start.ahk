@@ -11,7 +11,7 @@ A_TrayMenu.Add("Sair", ExitScript)
 
 ; Estados dos scripts (carregados do arquivo INI)
 global settings := Map()
-settings["focusBorderType"] := "none"  ; "none", "normal", "fixed", "flash"
+settings["focusBorder"] := true
 settings["focusZone"] := true
 settings["sameZone"] := true
 settings["sameApp"] := true
@@ -25,8 +25,6 @@ LoadSettings()
 
 ; Carrega todos os módulos (necessário devido às limitações do AutoHotkey)
 #Include globalFocusBorder.ahk
-#Include globalFocusBorderFixed.ahk
-#Include globalFocusHighlight.ahk
 #Include focusZone.ahk
 #Include toggleWindowSameZone.ahk
 #Include toggleWindowSameApp.ahk
@@ -141,22 +139,12 @@ ApplyHotkeySettings() {
         }
     }
 
-    ; Gerencia borda de foco (diferentes tipos com funções renomeadas)
+    ; Gerencia borda de foco (apenas a normal)
     try {
-        ; Para todos os timers de borda primeiro
-        SetTimer(CheckFocusChange, 0)        ; Borda normal
-        SetTimer(CheckFocusChangeFixed, 0)   ; Borda fixa
-        SetTimer(CheckFocusChangeFlash, 0)   ; Piscar janela
-
-        ; Ativa apenas o tipo selecionado
-        switch settings["focusBorderType"] {
-            case "normal":
-                SetTimer(CheckFocusChange, 25)
-            case "fixed":
-                SetTimer(CheckFocusChangeFixed, 100)
-            case "flash":
-                SetTimer(CheckFocusChangeFlash, 100)
-                ; case "none" não faz nada - todos os timers já foram parados
+        if (settings["focusBorder"]) {
+            SetTimer(CheckFocusChange, 25)
+        } else {
+            SetTimer(CheckFocusChange, 0)
         }
     }
 }
@@ -172,67 +160,40 @@ ShowSettings(*) {
     myGui.Add("Text", "x10 y10 w300 Center", "Configurações do FancyWindows").SetFont("s12 Bold")
     myGui.Add("Text", "x10 y35 w300 h2 0x10")
 
-    ; Grupo de bordas de foco (Radio buttons)
-    myGui.Add("Text", "x20 y50", "Tipo de Foco:").SetFont("s9 Bold")
-    rb1 := myGui.Add("Radio", "x30 y70", "Nenhum")
-    rb2 := myGui.Add("Radio", "x30 y90", "Picar Borda")
-    rb3 := myGui.Add("Radio", "x30 y110", "Fixa Borda")
-    rb4 := myGui.Add("Radio", "x30 y130", "Piscar Janela")
+    ; Checkboxes para todos os scripts
+    cb1 := myGui.Add("Checkbox", "x20 y50", "Borda de Foco")
+    cb1.Value := settings["focusBorder"]
 
-    ; Define o radio button selecionado baseado na configuração
-    switch settings["focusBorderType"] {
-        case "none":
-            rb1.Value := 1
-        case "normal":
-            rb2.Value := 1
-        case "fixed":
-            rb3.Value := 1
-        case "flash":
-            rb4.Value := 1
-        default:
-            rb1.Value := 1  ; Padrão para "none"
-    }
-
-    ; Checkboxes para outros scripts
-    cb2 := myGui.Add("Checkbox", "x20 y160", "Navegação por Zona")
+    cb2 := myGui.Add("Checkbox", "x20 y75", "Navegação por Zona")
     cb2.Value := settings["focusZone"]
 
-    cb3 := myGui.Add("Checkbox", "x20 y185", "Alternar Mesma Zona")
+    cb3 := myGui.Add("Checkbox", "x20 y100", "Alternar Mesma Zona")
     cb3.Value := settings["sameZone"]
 
-    cb4 := myGui.Add("Checkbox", "x20 y210", "Alternar Mesmo App")
+    cb4 := myGui.Add("Checkbox", "x20 y125", "Alternar Mesmo App")
     cb4.Value := settings["sameApp"]
 
-    cb5 := myGui.Add("Checkbox", "x20 y235", "Maximizar/Restaurar")
+    cb5 := myGui.Add("Checkbox", "x20 y150", "Maximizar/Restaurar")
     cb5.Value := settings["maxRestore"]
 
-    cb6 := myGui.Add("Checkbox", "x20 y260", "Maximizar/Minimizar")
+    cb6 := myGui.Add("Checkbox", "x20 y175", "Maximizar/Minimizar")
     cb6.Value := settings["maxMin"]
 
-    cb7 := myGui.Add("Checkbox", "x20 y285", "Fechar Janela")
+    cb7 := myGui.Add("Checkbox", "x20 y200", "Fechar Janela")
     cb7.Value := settings["closeWin"]
 
-    cb8 := myGui.Add("Checkbox", "x20 y310", "Centralizar Janela")
+    cb8 := myGui.Add("Checkbox", "x20 y225", "Centralizar Janela")
     cb8.Value := settings["centerWin"]
 
     ; Botões
-    btnApply := myGui.Add("Button", "x20 y345 w80", "Aplicar")
-    btnCancel := myGui.Add("Button", "x110 y345 w80", "Cancelar")
-    btnReload := myGui.Add("Button", "x200 y345 w80", "Recarregar")
+    btnApply := myGui.Add("Button", "x20 y260 w80", "Aplicar")
+    btnCancel := myGui.Add("Button", "x110 y260 w80", "Cancelar")
+    btnReload := myGui.Add("Button", "x200 y260 w80", "Recarregar")
 
     ; Função para aplicar configurações
     ApplySettings(*) {
-        ; Determina o tipo de borda baseado nos radio buttons
-        if (rb1.Value)
-            settings["focusBorderType"] := "none"
-        else if (rb2.Value)
-            settings["focusBorderType"] := "normal"
-        else if (rb3.Value)
-            settings["focusBorderType"] := "fixed"
-        else if (rb4.Value)
-            settings["focusBorderType"] := "flash"
-
-        ; Salva as outras configurações
+        ; Salva todas as configurações dos checkboxes
+        settings["focusBorder"] := cb1.Value
         settings["focusZone"] := cb2.Value
         settings["sameZone"] := cb3.Value
         settings["sameApp"] := cb4.Value
@@ -263,7 +224,7 @@ ShowSettings(*) {
     btnReload.OnEvent("Click", ReloadFromGUI)
 
     ; Mostra a GUI
-    myGui.Show("w320 h385")
+    myGui.Show("w320 h300")
 }
 
 ReloadScript(*) {

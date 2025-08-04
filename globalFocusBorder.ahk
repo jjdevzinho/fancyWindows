@@ -7,7 +7,6 @@ global borderTimer := ""
 global lastActiveWindow := 0
 global borderColor := GetWindowsAccentColor()  ; Cor de destaque do Windows
 global borderThickness := 2       ; Espessura da borda em pixels - mais fino
-global isDraggingWindow := false   ; Flag para detectar quando está movendo janela
 
 ; Verifica mudanças de foco a cada 25ms
 SetTimer(CheckFocusChange, 25)
@@ -33,27 +32,15 @@ GetWindowsAccentColor() {
 }
 
 CheckFocusChange() {
-    global lastActiveWindow, borderColor, isDraggingWindow
-
-    ; Verifica se Alt ou Win estão pressionados (indicando possível drag)
-    if (GetKeyState("Alt", "P") || GetKeyState("LWin", "P") || GetKeyState("RWin", "P")) {
-        isDraggingWindow := true
-        return  ; Não faz nada enquanto está arrastando
-    } else if (isDraggingWindow) {
-        ; Se acabou de parar de arrastar, aguarda um pouco antes de reativar
-        isDraggingWindow := false
-        SetTimer(() => ProcessFocusChangeNormal(), -150)  ; Aguarda 150ms antes de processar
-        return
-    }
-
-    ProcessFocusChangeNormal()
-}
-
-; Função separada para processar mudanças de foco
-ProcessFocusChangeNormal() {
     global lastActiveWindow, borderColor
 
     currentWindow := WinExist("A")
+
+    ; Se a janela atual é a mesma que a anterior, não faz nada
+    ; Isso evita reprocessamento desnecessário durante drag ou eventos fantasma
+    if (currentWindow == lastActiveWindow) {
+        return
+    }
 
     ; Se mudou de janela E é uma janela "normal"
     if (currentWindow != lastActiveWindow && currentWindow != 0 && IsNormalWindow(currentWindow)) {
@@ -65,9 +52,11 @@ ProcessFocusChangeNormal() {
         lastActiveWindow := currentWindow
     }
     ; Se não há janela ativa válida, remove qualquer borda restante
+    ; MAS SÓ se a lastActiveWindow for uma janela normal (não resetamos para janelas inválidas)
     else if (currentWindow == 0 || (currentWindow != 0 && !IsNormalWindow(currentWindow))) {
         RemoveBorder()
-        lastActiveWindow := 0
+        ; IMPORTANTE: NÃO alteramos lastActiveWindow para janelas inválidas!
+        ; Isso mantém a referência da última janela válida para comparação correta
     }
 }
 
@@ -84,12 +73,16 @@ IsNormalWindow(window) {
         if (windowTitle == "")
             return false
 
+        ; FILTRO SUPER RÁPIDO: Se é Windows Search, rejeita imediatamente
+        if (windowClass == "Windows.UI.Core.CoreWindow" && (windowTitle == "Pesquisar" || windowTitle == "Search"))
+            return false
+
         ; Filtra classes do sistema conhecidas
         systemClasses := [
             "Shell_TrayWnd",           ; Taskbar
             "DV2ControlHost",          ; Alt+Tab
             "MultitaskingViewFrame",   ; Task View
-            "Windows.UI.Core.CoreWindow", ; Sistema
+            "Windows.UI.Core.CoreWindow", ; Sistema (inclui Windows Search)
             "ForegroundStaging",       ; Sistema
             "MSCTFIME UI",            ; IME
             "Default IME",            ; IME
@@ -102,7 +95,9 @@ IsNormalWindow(window) {
             "NotifyIconOverflowWindow", ; System tray overflow
             "Shell_SecondaryTrayWnd", ; Secondary taskbar
             "TrayNotifyWnd",          ; Notification area
-            "SystemTrayIcon"          ; System tray icons
+            "SystemTrayIcon",         ; System tray icons
+            "Windows.UI.Popups.PopupHost", ; Windows popups
+            "Xaml_WindowedPopupClass" ; Windows 11 popups
         ]
 
         ; Verifica se é uma classe do sistema
@@ -118,7 +113,9 @@ IsNormalWindow(window) {
             "Start",
             "Cortana",
             "Search",
-            "Action center"
+            "Pesquisar",             ; Windows Search PT-BR
+            "Action center",
+            "Notification area"
         ]
 
         for title in systemTitles {
@@ -149,8 +146,19 @@ ApplyBorderEffect(window) {
     ; Remove bordas anteriores se existirem
     if (borderTimer) {
         SetTimer(RemoveBorder, 0)
+        ; Limpa o timer mas NÃO chama RemoveBorder() aqui para evitar dupla remoção
+        borderTimer := ""
     }
-    RemoveBorder()
+
+    ; Remove bordas existentes apenas se houver
+    if (borderGuis && borderGuis.Length > 0) {
+        for border in borderGuis {
+            try {
+                border.Destroy()
+            }
+        }
+        borderGuis := []
+    }
 
     ; Cria as bordas ao redor da janela
     try {
@@ -159,8 +167,9 @@ ApplyBorderEffect(window) {
         WinGetPos(&winX, &winY, &winW, &winH, window)
 
         ; Ignora janelas muito pequenas
-        if (clientW < 200 || clientH < 100)
+        if (clientW < 200 || clientH < 100) {
             return
+        }
 
         ; Cria uma única GUI com borda arredondada usando região
         borderGui := Gui("+AlwaysOnTop -Caption +ToolWindow")
@@ -196,20 +205,28 @@ ApplyBorderEffect(window) {
 
         ; Remove as bordas após 250ms
         borderTimer := SetTimer(RemoveBorder, -250)
+    } catch Error as e {
+        ; Silenciosamente ignora erros na criação da borda
     }
 }
 
 RemoveBorder() {
     global borderGuis, borderTimer
 
-    ; Remove todas as bordas
-    if (borderGuis && borderGuis.Length > 0) {
-        for border in borderGuis {
-            try {
-                border.Destroy()
-            }
-        }
-        borderGuis := []
+    ; Só faz algo se realmente houver bordas para remover
+    if (!borderGuis || borderGuis.Length == 0) {
+        borderTimer := ""
+        return
     }
+
+    ; Remove todas as bordas
+    for border in borderGuis {
+        try {
+            border.Destroy()
+        } catch Error as e {
+            ; Silenciosamente ignora erros na remoção
+        }
+    }
+    borderGuis := []
     borderTimer := ""
 }

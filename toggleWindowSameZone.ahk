@@ -9,7 +9,7 @@ MARGIN_ERROR := 30
 ; Variáveis globais para controle das janelas
 global selectedIndex := 1 ; Índice da janela selecionada
 global windowList := [] ; Lista de janelas na região atual
-global lastActiveWindow := 0 ; Última janela que teve foco
+global lastZoneWindow := 0 ; Última janela que teve foco na zona (renomeado para evitar conflito)
 
 ; Função para alternar para a próxima janela
 SwitchToWindow(windows, index) {
@@ -20,7 +20,7 @@ SwitchToWindow(windows, index) {
 
 ; Função para alternar entre janelas na mesma região
 SwitchWindowInSameZone() {
-    global lastActiveWindow, selectedIndex, windowList
+    global lastZoneWindow, selectedIndex, windowList
 
     activeWindow := WinExist("A") ; Obtém a janela ativa
     if (!activeWindow) {
@@ -54,7 +54,7 @@ SwitchWindowInSameZone() {
             }
         }
         selectedIndex := 2 ; Começa com a segunda janela
-        lastActiveWindow := activeWindow
+        lastZoneWindow := activeWindow
     } else {
         ; Avança para a próxima janela
         selectedIndex++
@@ -77,15 +77,15 @@ IsWindowInSameZone(x1, y1, w1, h1, x2, y2, w2, h2) {
 }
 
 ; Função chamada quando Alt é solto
-AltReleased() {
-    global selectedIndex, windowList, lastActiveWindow
+ZoneAltReleased() {
+    global selectedIndex, windowList, lastZoneWindow
 
     ; Reseta as variáveis
     selectedIndex := 1
     windowList := []
-    lastActiveWindow := 0
+    lastZoneWindow := 0
 }
 
 ; Atalhos para alternar janelas na mesma região
-$!`:: SwitchWindowInSameZone() ; alt + ` para alternar
-~LAlt Up:: AltReleased() ; Reseta quando Alt é solto
+$!`:: SwitchWindowInSameZone() ; Alt + ` para alternar
+~LAlt Up:: ZoneAltReleased() ; Reseta quando Alt é solto
