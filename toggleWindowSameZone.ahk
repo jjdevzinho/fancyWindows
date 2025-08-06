@@ -87,5 +87,5 @@ ZoneAltReleased() {
 }
 
 ; Atalhos para alternar janelas na mesma região
-$!`:: SwitchWindowInSameZone() ; Alt + ` para alternar
+$!sc029:: SwitchWindowInSameZone() ; Alt + ` posição física, tecla acima do tab, independente do símbolo do seu layout
 ~LAlt Up:: ZoneAltReleased() ; Reseta quando Alt é solto

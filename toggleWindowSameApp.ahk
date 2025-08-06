@@ -166,6 +166,6 @@ WinReleased() {
 }
 
 ; Atalho para alternar janelas do mesmo programa
-$#`:: SwitchWindowSameApp() ; Win + ` para alternar
+$#sc029:: SwitchWindowSameApp() ; Win + ` posição física, tecla acima do tab, independente do símbolo do seu layout
 ~LWin Up:: WinReleased() ; Reseta quando Win é solto
 ~RWin Up:: WinReleased() ; Reseta quando Win direito é solto
