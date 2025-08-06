@@ -6,7 +6,7 @@ SetTitleMatchMode(2)
 ; Variáveis globais para controle das janelas
 global selectedIndex := 1 ; Índice da janela selecionada
 global windowList := [] ; Lista de janelas do mesmo programa
-global lastActiveWindow := 0 ; Última janela que teve foco
+global lastAppWindow := 0 ; Última janela que teve foco (renomeado para evitar conflito)
 global currentAppId := "" ; Identificador da aplicação atual
 
 ; Variáveis globais para destaque visual
@@ -74,7 +74,7 @@ IsSameApplication(window1, window2) {
 
 ; Função para alternar entre janelas do mesmo programa
 SwitchWindowSameApp() {
-    global lastActiveWindow, selectedIndex, windowList, currentAppId
+    global lastAppWindow, selectedIndex, windowList, currentAppId
 
     activeWindow := WinExist("A") ; Obtém a janela ativa
     if (!activeWindow) {
@@ -119,7 +119,7 @@ SwitchWindowSameApp() {
         }
         selectedIndex := 2 ; Começa com a segunda janela
         currentAppId := activeAppId
-        lastActiveWindow := activeWindow
+        lastAppWindow := activeWindow
     } else {
         ; Avança para a próxima janela
         selectedIndex++
@@ -156,12 +156,12 @@ SwitchWindowSameApp() {
 
 ; Função chamada quando Win é solto
 WinReleased() {
-    global selectedIndex, windowList, lastActiveWindow, currentAppId
+    global selectedIndex, windowList, lastAppWindow, currentAppId
 
     ; Reseta as variáveis
     selectedIndex := 1
     windowList := []
-    lastActiveWindow := 0
+    lastAppWindow := 0
     currentAppId := ""
 }
 

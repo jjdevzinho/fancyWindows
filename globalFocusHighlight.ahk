@@ -4,26 +4,39 @@
 ; Variáveis globais para o efeito
 global highlightGui := ""
 global highlightTimer := ""
-global lastActiveWindow := 0
+global lastHighlightWindow := 0  ; Renomeado para evitar conflito com globalFocusBorder
 
-; Verifica mudanças de foco a cada 100ms
-SetTimer(CheckFocusChange, 100)
+; Verifica mudanças de foco a cada 25ms (igual ao globalFocusBorder)
+SetTimer(CheckFocusChangeFlash, 25)
 
-CheckFocusChange() {
-    global lastActiveWindow
+CheckFocusChangeFlash() {
+    global lastHighlightWindow
 
     currentWindow := WinExist("A")
 
+    ; Se a janela atual é a mesma que a anterior, não faz nada
+    ; Isso evita reprocessamento desnecessário durante drag ou eventos fantasma
+    if (currentWindow == lastHighlightWindow) {
+        return
+    }
+
     ; Se mudou de janela E é uma janela "normal"
-    if (currentWindow != lastActiveWindow && currentWindow != 0 && IsNormalWindow(currentWindow)) {
+    if (currentWindow != lastHighlightWindow && currentWindow != 0 && IsNormalWindowFlash(currentWindow)) {
         ; Aplica o efeito de piscar
         ApplyFlashEffect(currentWindow)
-        lastActiveWindow := currentWindow
+        lastHighlightWindow := currentWindow
+    }
+    ; Se não há janela ativa válida, remove qualquer highlight restante
+    ; MAS NÃO resetamos lastHighlightWindow para evitar conflito (igual ao globalFocusBorder)
+    else if (currentWindow == 0 || (currentWindow != 0 && !IsNormalWindowFlash(currentWindow))) {
+        RemoveHighlight()
+        ; IMPORTANTE: NÃO alteramos lastHighlightWindow para janelas inválidas!
+        ; Isso mantém a referência da última janela válida para comparação correta
     }
 }
 
 ; Função para verificar se é uma janela "comum" (não do sistema)
-IsNormalWindow(window) {
+IsNormalWindowFlash(window) {
     try {
         ; Obtém informações da janela
         windowTitle := WinGetTitle(window)
@@ -35,12 +48,16 @@ IsNormalWindow(window) {
         if (windowTitle == "")
             return false
 
+        ; FILTRO SUPER RÁPIDO: Se é Windows Search, rejeita imediatamente
+        if (windowClass == "Windows.UI.Core.CoreWindow" && (windowTitle == "Pesquisar" || windowTitle == "Search"))
+            return false
+
         ; Filtra classes do sistema conhecidas
         systemClasses := [
             "Shell_TrayWnd",           ; Taskbar
             "DV2ControlHost",          ; Alt+Tab
             "MultitaskingViewFrame",   ; Task View
-            "Windows.UI.Core.CoreWindow", ; Sistema
+            "Windows.UI.Core.CoreWindow", ; Sistema (inclui Windows Search)
             "ForegroundStaging",       ; Sistema
             "MSCTFIME UI",            ; IME
             "Default IME",            ; IME
@@ -53,7 +70,9 @@ IsNormalWindow(window) {
             "NotifyIconOverflowWindow", ; System tray overflow
             "Shell_SecondaryTrayWnd", ; Secondary taskbar
             "TrayNotifyWnd",          ; Notification area
-            "SystemTrayIcon"          ; System tray icons
+            "SystemTrayIcon",         ; System tray icons
+            "Windows.UI.Popups.PopupHost", ; Windows popups
+            "Xaml_WindowedPopupClass" ; Windows 11 popups
         ]
 
         ; Verifica se é uma classe do sistema
@@ -69,7 +88,9 @@ IsNormalWindow(window) {
             "Start",
             "Cortana",
             "Search",
-            "Action center"
+            "Pesquisar",             ; Windows Search PT-BR
+            "Action center",
+            "Notification area"
         ]
 
         for title in systemTitles {
