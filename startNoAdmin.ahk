@@ -3,10 +3,7 @@
 #Include globalFocusBorder.ahk
 
 #Include focusZone.ahk
-
-; Falha quando usa globalFocusBorderFixed.ahk
 #Include toggleWindowSameZone.ahk
-
 #Include toggleWindowSameApp.ahk
 
 #Include maxRestoreWindow.ahk

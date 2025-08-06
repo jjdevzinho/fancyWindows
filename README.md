@@ -14,48 +14,54 @@ Execute o arquivo [`start.ahk`](start.ahk) para iniciar todos os scripts com pri
 
 ## 📋 Funcionalidades e Atalhos
 
-### 🎯 Navegação Entre Janelas
+### 🎯 Navegação Entre Janelas (com Previews)
 
 #### 1. **Alternar Entre Janelas da Mesma Aplicação**
+![Preview Alternar Janelas Mesmo App](gif/toggleWindowSameApp.gif)
+
 - **Arquivo**: [`toggleWindowSameApp.ahk`](toggleWindowSameApp.ahk)
 - **Atalho**: `Win + ` ` (Win + Crase)
 - **Função**: Alterna entre todas as janelas abertas do mesmo programa
 - **Como usar**: Pressione e segure Win, depois pressione ` múltiplas vezes para navegar. Solte Win para confirmar a seleção
 
 #### 2. **Alternar Entre Janelas na Mesma Região**
+![Preview Alternar Janelas Mesma Zona](gif/toggleWindowSameZone.gif)
+
 - **Arquivo**: [`toggleWindowSameZone.ahk`](toggleWindowSameZone.ahk)
 - **Atalho**: `Alt + ` ` (Alt + Crase)
 - **Função**: Alterna entre janelas que estão na mesma posição/tamanho da tela
 - **Como usar**: Ideal para janelas maximizadas ou em posições similares
-- **⚠️ IMPORTANTE**: Não funciona corretamente se usado em conjunto com [`globalFocusBorderFixed.ahk`](globalFocusBorderFixed.ahk) devido à forma como o foco das janelas é alternado
 
 #### 3. **Navegação Direcional Entre Janelas**
+![Preview Navegação Direcional](gif/focusZone.gif)
+
 - **Arquivo**: [`focusZone.ahk`](focusZone.ahk)
 - **Atalhos**: 
   - `Win + Shift + →` - Focar janela à direita
   - `Win + Shift + ←` - Focar janela à esquerda  
   - `Win + Shift + ↑` - Focar janela acima
   - `Win + Shift + ↓` - Focar janela abaixo
-- **⚠️ IMPORTANTE**: Estes atalhos substituem a funcionalidade nativa do Windows de mover janelas entre monitores
+
+#### 4. **Centralizar Janela**
+![Preview Centralizar Janela](gif/centeredWindow.gif)
+
+- **Arquivo**: [`centeredWindow.ahk`](centeredWindow.ahk)
+- **Atalho**: `Win + Enter`
+- **Função**: Centraliza a janela ativa ocupando 60% da tela. Pressione novamente para restaurar posição original
 
 ### 🪟 Controle de Janelas
 
-#### 4. **Maximizar/Restaurar Janela**
+#### 5. **Maximizar/Restaurar Janela**
 - **Arquivo**: [`maxRestoreWindow.ahk`](maxRestoreWindow.ahk)
 - **Atalho**: `Win + Shift + Enter`
 - **Função**: Alterna entre maximizar e restaurar a janela ativa
 
-#### 5. **Maximizar/Minimizar Inteligente**
+#### 6. **Maximizar/Minimizar Inteligente**
 - **Arquivo**: [`maxMinWindow.ahk`](maxMinWindow.ahk)
 - **Atalhos**:
   - `Win + Shift + Page Up` - Maximiza janela (ou restaura última minimizada se pressionado rapidamente)
   - `Win + Shift + Page Down` - Minimiza janela maximizada ou apenas minimiza se não maximizada
 - **Função**: Sistema inteligente que lembra da última janela minimizada por 1.75 segundos
-
-#### 6. **Centralizar Janela**
-- **Arquivo**: [`centeredWindow.ahk`](centeredWindow.ahk)
-- **Atalho**: `Win + Enter`
-- **Função**: Centraliza a janela ativa ocupando 60% da tela. Pressione novamente para restaurar posição original
 
 #### 7. **Fechar Janela com Confirmação**
 - **Arquivo**: [`closeWindow.ahk`](closeWindow.ahk)
@@ -69,12 +75,7 @@ Execute o arquivo [`start.ahk`](start.ahk) para iniciar todos os scripts com pri
 - **Função**: Adiciona uma borda colorida temporária (250ms) ao redor da janela quando ela recebe foco
 - **Cor**: Usa automaticamente a cor de destaque do tema do Windows
 
-#### 9. **Borda de Foco Permanente**
-- **Arquivo**: [`globalFocusBorderFixed.ahk`](globalFocusBorderFixed.ahk)
-- **Função**: Mantém uma borda permanente ao redor da janela ativa
-- **⚠️ ATENÇÃO**: Pode causar bugs no script de alternância de zona [`toggleWindowSameZone.ahk`](toggleWindowSameZone.ahk) devido à forma como alterna o foco das janelas. Se o script de alternância de zona não for usado, este funciona muito bem e tem um comportamento bastante interessante
-
-#### 10. **Efeito de Destaque por Flash**
+#### 9. **Efeito de Destaque por Flash**
 - **Arquivo**: [`globalFocusHighlight.ahk`](globalFocusHighlight.ahk)
 - **Função**: Aplica um efeito de flash escuro temporário quando uma janela recebe foco
 
@@ -97,21 +98,6 @@ MARGIN_ERROR := 30  ; pixels - ajuste conforme necessário
 ```ahk
 borderThickness := 2  ; pixels
 ```
-
-## ⚠️ Avisos Importantes
-
-### Conflitos com Funcionalidades Nativas do Windows
-
-Os seguintes atalhos **SUBSTITUEM** funcionalidades nativas do Windows:
-
-- **`Win + Shift + Setas`**: A funcionalidade nativa de mover janelas entre monitores será perdida
-- **`Win + Enter`**: Pode conflitar com outros programas que usam este atalho
-
-### Compatibilidade de Scripts
-
-- **Não use simultaneamente**: [`globalFocusBorder.ahk`](globalFocusBorder.ahk) e [`globalFocusBorderFixed.ahk`](globalFocusBorderFixed.ahk)
-- **[`globalFocusBorderFixed.ahk`](globalFocusBorderFixed.ahk)** causa bugs no [`toggleWindowSameZone.ahk`](toggleWindowSameZone.ahk) devido à forma como o foco das janelas é alternado. Se você não usar o script de alternância de zona, o script de borda permanente funciona muito bem
-- **[`toggleWindowSameZone.ahk`](toggleWindowSameZone.ahk)** não funciona corretamente com [`globalFocusBorderFixed.ahk`](globalFocusBorderFixed.ahk) ativo
 
 ## 🔧 Requisitos
 
@@ -143,13 +129,17 @@ fancyWindows/
 ├── toggleWindowSameApp.ahk     # Alternar janelas mesmo app
 ├── toggleWindowSameZone.ahk    # Alternar janelas mesma zona
 ├── focusZone.ahk               # Navegação direcional
+├── centeredWindow.ahk          # Centralizar janela
 ├── maxRestoreWindow.ahk        # Maximizar/restaurar
 ├── maxMinWindow.ahk            # Maximizar/minimizar
-├── centeredWindow.ahk          # Centralizar janela
 ├── closeWindow.ahk             # Fechar com confirmação
 ├── globalFocusBorder.ahk       # Borda temporária
-├── globalFocusBorderFixed.ahk  # Borda permanente
-└── globalFocusHighlight.ahk    # Efeito flash
+├── globalFocusHighlight.ahk    # Efeito flash
+└── gif/                        # Imagens de preview
+    ├── toggleWindowSameApp.gif
+    ├── toggleWindowSameZone.gif
+    ├── focusZone.gif
+    └── centeredWindow.gif
 ```
 
 ## 🤝 Contribuição
